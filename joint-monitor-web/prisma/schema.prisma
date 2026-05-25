@@ -1,0 +1,61 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // Link đuôi 6543 (có ?pgbouncer=true)
+  directUrl = env("DIRECT_URL")   // Link đuôi 5432 (không có pgbouncer)
+}
+
+// Bác sĩ
+model Doctor {
+  id       String    @id @default(cuid())
+  username String    @unique
+  password String    
+  name     String
+  patients Patient[]
+  hospitalId      String?
+  hospitalAccount HospitalAccount? @relation(fields: [hospitalId], references: [id])
+}
+
+// Bệnh nhân
+model Patient {
+  id         String    @id 
+  name       String
+  age        Int
+  gender     String
+  accessCode String    
+  doctorId   String?
+  doctor     Doctor?   @relation(fields: [doctorId], references: [id])
+  sessions   Session[]
+}
+
+// Lịch sử đo
+model Session {
+  id          String   @id @default(cuid())
+  patientId   String
+  patient     Patient  @relation(fields: [patientId], references: [id])
+  sensorData  String   
+  aiStatus    Int      @default(0) // 
+  duration    Int
+  startTime   DateTime @default(now())
+  doctorNotes String?  
+  aiNormal       Int      @default(0)
+  aiArthritis    Int      @default(0)
+  aiDegeneration Int      @default(0)
+  aiSevere       Int      @default(0) // ai_status === 3: Thoái hóa nặng / Tiếng rắc
+  
+  // THÊM 3 TRƯỜNG MỚI CHO HÌNH ẢNH TMJ
+  imageFront     String?  // Ảnh trực diện
+  imageRight     String?  // Ảnh mặt bên phải
+  imageLeft      String?  // Ảnh mặt bên trái
+}
+
+model HospitalAccount {
+  id       String   @id @default(cuid())
+  email    String   @unique
+  password String
+  name     String
+  doctors  Doctor[] // Cột này để liên kết với bảng Bác sĩ
+}
