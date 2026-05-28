@@ -159,13 +159,22 @@ export default function PatientDashboard({ params }: { params: Promise<{ id: str
   };
 
   const handleAcceptCam = async () => {
-    // [THÊM MỚI]: Warm-up Speech API to bypass mobile autoplay restrictions
-    if (!speechInitialized) {
-      const unlockUtterance = new SpeechSynthesisUtterance('');
-      unlockUtterance.volume = 0; // Phát im lặng
-      window.speechSynthesis.speak(unlockUtterance);
-      speechInitialized = true;
+    // 1. Kích hoạt giọng nói hợp lệ ngay lập tức (Đồng bộ) - trước mọi await
+    try {
+      if (window.speechSynthesis) {
+        window.speechSynthesis.resume(); // Đánh thức API trên iOS
+        if (!speechInitialized) {
+          const initSpeech = new SpeechSynthesisUtterance('Đã bật âm thanh và camera');
+          initSpeech.volume = 1; // Phát thật, không giấu diếm
+          initSpeech.rate = 1.2;
+          window.speechSynthesis.speak(initSpeech);
+          speechInitialized = true;
+        }
+      }
+    } catch (error) {
+      console.warn("Speech API bị chặn, nhưng vẫn tiếp tục mở cam", error);
     }
+
     if (!isPeerReady) {
       alert('Đang khởi tạo kênh video, vui lòng đợi vài giây rồi thử lại.');
       return;
