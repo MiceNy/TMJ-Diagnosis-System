@@ -159,6 +159,13 @@ export default function PatientDashboard({ params }: { params: Promise<{ id: str
   };
 
   const handleAcceptCam = async () => {
+    // [THÊM MỚI]: Warm-up Speech API to bypass mobile autoplay restrictions
+    if (!speechInitialized) {
+      const unlockUtterance = new SpeechSynthesisUtterance('');
+      unlockUtterance.volume = 0; // Phát im lặng
+      window.speechSynthesis.speak(unlockUtterance);
+      speechInitialized = true;
+    }
     if (!isPeerReady) {
       alert('Đang khởi tạo kênh video, vui lòng đợi vài giây rồi thử lại.');
       return;
