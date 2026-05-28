@@ -67,8 +67,8 @@ export default function PatientDashboard({ params }: { params: Promise<{ id: str
             { urls: 'stun:stun2.l.google.com:19302' },
             {
               urls: ['turn:free.expressturn.com:3478', 'turn:free.expressturn.com:443'],
-              username: '0000000002092307355',
-              credential: 'zlKyAPUVnuL/0C66pFDX/41zTxw=',
+              username: '000000002092307355',
+              credential: 'zlKyAPUVnuL/0C66pFDX/41zTxw='
             },
           ],
           iceCandidatePoolSize: 10,

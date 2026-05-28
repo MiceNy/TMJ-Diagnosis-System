@@ -178,8 +178,8 @@ export default function PatientDetailMonitor({ params }: { params: Promise<{ id:
     { urls: 'stun:stun2.l.google.com:19302' },
     {
       urls: ['turn:free.expressturn.com:3478', 'turn:free.expressturn.com:443'],
-      username: '0000000002092307355',
-      credential: 'zlKyAPUVnuL/0C66pFDX/41zTxw=',
+      username: '000000002092307355',
+      credential: 'zlKyAPUVnuL/0C66pFDX/41zTxw='
     },
   ];
 
@@ -253,8 +253,9 @@ export default function PatientDetailMonitor({ params }: { params: Promise<{ id:
     // =========== FIX: Force unlock on beforeunload (tab close / F5) ===========
     const handleBeforeUnload = () => {
       if (mqttClientRef.current && activeDeviceId && hasAttemptedLockRef.current) {
-        mqttClientRef.current.publish(`joint_monitor/${activeDeviceId}/lock`, "FREE", { retain: true, qos: 1 });
-        mqttClientRef.current.end(true);
+        mqttClientRef.current.publish(`joint_monitor/${activeDeviceId}/lock`, "FREE", { retain: true, qos: 1 }, () => {
+          mqttClientRef.current.end(true);
+        });
       }
     };
     window.addEventListener('beforeunload', handleBeforeUnload);
@@ -468,11 +469,14 @@ export default function PatientDetailMonitor({ params }: { params: Promise<{ id:
       }
     });
     return () => { 
-      // =========== FIX: Force MQTT cleanup with end(true) ===========
+      // =========== FIX: Force MQTT cleanup with callback to avoid race condition ===========
       if (client.connected && hasAttemptedLockRef.current) {
-        client.publish(lockTopic, "FREE", { retain: true, qos: 1 });
+        client.publish(lockTopic, "FREE", { retain: true, qos: 1 }, () => {
+          client.end(true);
+        });
+      } else {
+        client.end(true);
       }
-      client.end(true); // true = force close immediately
     };
   }, [activeDeviceId, patientId]);
 
