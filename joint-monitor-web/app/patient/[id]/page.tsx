@@ -63,6 +63,8 @@ export default function PatientDashboard({ params }: { params: Promise<{ id: str
         config: {
           iceServers: [
             { urls: 'stun:stun.l.google.com:19302' },
+            { urls: 'stun:stun1.l.google.com:19302' },
+            { urls: 'stun:stun2.l.google.com:19302' },
             {
               urls: ['turn:free.expressturn.com:3478', 'turn:free.expressturn.com:443'],
               username: '0000000002092307355',

@@ -174,6 +174,8 @@ export default function PatientDetailMonitor({ params }: { params: Promise<{ id:
 
   const ICE_SERVERS: RTCIceServer[] = [
     { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' },
+    { urls: 'stun:stun2.l.google.com:19302' },
     {
       urls: ['turn:free.expressturn.com:3478', 'turn:free.expressturn.com:443'],
       username: '0000000002092307355',
@@ -248,7 +250,17 @@ export default function PatientDetailMonitor({ params }: { params: Promise<{ id:
         setIsDeviceOnline(false);
     }, 2000);
 
+    // =========== FIX: Force unlock on beforeunload (tab close / F5) ===========
+    const handleBeforeUnload = () => {
+      if (mqttClientRef.current && activeDeviceId && hasAttemptedLockRef.current) {
+        mqttClientRef.current.publish(`joint_monitor/${activeDeviceId}/lock`, "FREE", { retain: true, qos: 1 });
+        mqttClientRef.current.end(true);
+      }
+    };
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
       disposed = true;
       faceDetectActiveRef.current = false;
       clearInterval(watchdog);
@@ -458,7 +470,7 @@ export default function PatientDetailMonitor({ params }: { params: Promise<{ id:
     return () => { 
       // =========== FIX: Force MQTT cleanup with end(true) ===========
       if (client.connected && hasAttemptedLockRef.current) {
-        client.publish(lockTopic, "FREE", { retain: true });
+        client.publish(lockTopic, "FREE", { retain: true, qos: 1 });
       }
       client.end(true); // true = force close immediately
     };
@@ -588,7 +600,24 @@ export default function PatientDetailMonitor({ params }: { params: Promise<{ id:
               <div className="flex items-center gap-3 mt-1">
                 <span className={`h-2 w-2 rounded-full ${isDeviceOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></span>
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{isDeviceOnline ? 'ONLINE' : 'OFFLINE'}</span>
-                {isDeviceLockedByMe && <span className="flex items-center gap-1 text-[10px] font-black text-blue-600 uppercase"><ShieldCheck className="h-3 w-3"/> Đã khóa mạch</span>}
+                {isDeviceLockedByMe && (
+                  <span className="flex items-center gap-1 text-[10px] font-black text-blue-600 uppercase">
+                    <ShieldCheck className="h-3 w-3"/> Đã khóa mạch
+                    <button
+                      onClick={() => {
+                        if (mqttClientRef.current && activeDeviceId) {
+                          mqttClientRef.current.publish(`joint_monitor/${activeDeviceId}/lock`, "FREE", { retain: true, qos: 1 });
+                          setIsDeviceLockedByMe(false);
+                          hasAttemptedLockRef.current = false;
+                        }
+                      }}
+                      className="ml-2 px-2 py-0.5 bg-red-500 text-white text-[8px] font-bold rounded-md hover:bg-red-600"
+                      title="Ép mở khóa thiết bị"
+                    >
+                      ÉP MỞ KHÓA
+                    </button>
+                  </span>
+                )}
               </div>
             </div>
           </div>
